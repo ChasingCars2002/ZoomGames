@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { GamePhase } from './types';
-import { TransportProvider } from './context/TransportContext';
+import { TransportProvider, useTransportContext } from './context/TransportContext';
 import { RoomProvider } from './context/RoomContext';
 import { GameProvider, useGameContext } from './context/GameContext';
 import { useRoomContext } from './context/RoomContext';
@@ -51,6 +51,14 @@ const InnerApp: React.FC<InnerAppProps> = ({ onLeaveRoom }) => {
   const { room } = useRoomContext();
   const [screen, setScreen] = useState<Screen>('lobby');
   const [transitioning, setTransitioning] = useState(false);
+  const hadRoomRef = React.useRef(false);
+
+  // Track whether room was ever set
+  useEffect(() => {
+    if (room) {
+      hadRoomRef.current = true;
+    }
+  }, [room]);
 
   // Watch engine phase and auto-navigate
   useEffect(() => {
@@ -72,9 +80,9 @@ const InnerApp: React.FC<InnerAppProps> = ({ onLeaveRoom }) => {
     }
   }, [engineState.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // If room is null (user got kicked/banned), go back to home
+  // If room transitions from set to null (user got kicked/banned), go back to home
   useEffect(() => {
-    if (!room) {
+    if (!room && hadRoomRef.current) {
       onLeaveRoom();
     }
   }, [room, onLeaveRoom]);
@@ -100,22 +108,25 @@ const InnerApp: React.FC<InnerAppProps> = ({ onLeaveRoom }) => {
 
 const RoomInitializer: React.FC<{ roomCode: string }> = ({ roomCode }) => {
   const { createRoom, joinRoom } = useRoomContext();
+  const { transport } = useTransportContext();
   const initializedRef = React.useRef(false);
 
   useEffect(() => {
     if (initializedRef.current) return;
+    if (!transport) return; // Wait until transport is ready
+
     initializedRef.current = true;
 
     const nickname = sessionStorage.getItem('zg_nickname') ?? 'Player';
     const action = sessionStorage.getItem('zg_action');
 
     if (action === 'create') {
-      createRoom(nickname);
+      createRoom(roomCode, nickname);
     } else if (action === 'join') {
       const code = sessionStorage.getItem('zg_room_code') ?? roomCode;
       joinRoom(code, nickname);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [transport, createRoom, joinRoom, roomCode]);
 
   return null;
 };

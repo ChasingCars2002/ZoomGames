@@ -11,7 +11,7 @@ import { Player, Room, Role, PLAYER_COLORS } from '../types';
 import { GameMessage } from '../types';
 import { useTransportContext } from './TransportContext';
 import { sanitizeNickname } from '../lib/security/sanitize';
-import { generateRoomCode, isValidRoomCode } from '../lib/security/roomCodes';
+import { isValidRoomCode } from '../lib/security/roomCodes';
 
 // ---------------------------------------------------------------------------
 // Context value
@@ -21,13 +21,14 @@ interface RoomContextValue {
   room: Room | null;
   currentPlayerId: string | null;
   isHost: boolean;
-  createRoom: (nickname: string) => void;
+  createRoom: (code: string, nickname: string) => void;
   joinRoom: (code: string, nickname: string) => void;
   leaveRoom: () => void;
   kickPlayer: (id: string) => void;
   banPlayer: (id: string) => void;
   transferHost: (id: string) => void;
   toggleReady: () => void;
+  addBot: (bot: Player) => void;
 }
 
 const RoomContext = createContext<RoomContextValue | null>(null);
@@ -93,10 +94,9 @@ export function RoomProvider({ children }: RoomProviderProps) {
   // createRoom
   // -----------------------------------------------------------------------
   const createRoom = useCallback(
-    (nickname: string) => {
+    (code: string, nickname: string) => {
       if (!transport) return;
 
-      const code = generateRoomCode();
       const hostPlayer = buildPlayer(transport.clientId, nickname, Role.HOST, []);
 
       const newRoom: Room = {
@@ -276,6 +276,23 @@ export function RoomProvider({ children }: RoomProviderProps) {
       };
     });
   }, [transport, currentPlayerId]);
+
+  // -----------------------------------------------------------------------
+  // addBot (host only)
+  // -----------------------------------------------------------------------
+  const addBot = useCallback(
+    (bot: Player) => {
+      setRoom((prev) => {
+        if (!prev) return prev;
+        if (prev.players.some((p) => p.id === bot.id)) return prev;
+        return {
+          ...prev,
+          players: [...prev.players, bot],
+        };
+      });
+    },
+    [],
+  );
 
   // -----------------------------------------------------------------------
   // Transport message listener
@@ -511,6 +528,7 @@ export function RoomProvider({ children }: RoomProviderProps) {
     banPlayer,
     transferHost,
     toggleReady,
+    addBot,
   };
 
   return <RoomContext.Provider value={value}>{children}</RoomContext.Provider>;
