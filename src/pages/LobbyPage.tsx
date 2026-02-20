@@ -49,6 +49,7 @@ const LobbyPage: React.FC = () => {
     kickPlayer,
     banPlayer,
     toggleReady,
+    addBot,
   } = useRoomContext();
 
   const {
@@ -134,8 +135,8 @@ const LobbyPage: React.FC = () => {
       isBot: true,
     };
 
-    dispatch({ type: 'JOIN', player: botPlayer });
-  }, [room, players, dispatch]);
+    addBot(botPlayer);
+  }, [room, players, addBot]);
 
   // Handle copy room code
   const handleCopyCode = useCallback(() => {
