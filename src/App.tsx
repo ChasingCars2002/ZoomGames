@@ -113,7 +113,7 @@ const RoomInitializer: React.FC<{ roomCode: string }> = ({ roomCode }) => {
     const action = sessionStorage.getItem('zg_action');
 
     if (action === 'create') {
-      createRoom(nickname);
+      createRoom(roomCode, nickname);
     } else if (action === 'join') {
       const code = sessionStorage.getItem('zg_room_code') ?? roomCode;
       joinRoom(code, nickname);

@@ -11,7 +11,7 @@ import { Player, Room, Role, PLAYER_COLORS } from '../types';
 import { GameMessage } from '../types';
 import { useTransportContext } from './TransportContext';
 import { sanitizeNickname } from '../lib/security/sanitize';
-import { generateRoomCode, isValidRoomCode } from '../lib/security/roomCodes';
+import { isValidRoomCode } from '../lib/security/roomCodes';
 
 // ---------------------------------------------------------------------------
 // Context value
@@ -21,7 +21,7 @@ interface RoomContextValue {
   room: Room | null;
   currentPlayerId: string | null;
   isHost: boolean;
-  createRoom: (nickname: string) => void;
+  createRoom: (code: string, nickname: string) => void;
   joinRoom: (code: string, nickname: string) => void;
   leaveRoom: () => void;
   kickPlayer: (id: string) => void;
@@ -94,10 +94,9 @@ export function RoomProvider({ children }: RoomProviderProps) {
   // createRoom
   // -----------------------------------------------------------------------
   const createRoom = useCallback(
-    (nickname: string) => {
+    (code: string, nickname: string) => {
       if (!transport) return;
 
-      const code = generateRoomCode();
       const hostPlayer = buildPlayer(transport.clientId, nickname, Role.HOST, []);
 
       const newRoom: Room = {
