@@ -51,6 +51,14 @@ const InnerApp: React.FC<InnerAppProps> = ({ onLeaveRoom }) => {
   const { room } = useRoomContext();
   const [screen, setScreen] = useState<Screen>('lobby');
   const [transitioning, setTransitioning] = useState(false);
+  const hadRoomRef = React.useRef(false);
+
+  // Track whether room was ever set
+  useEffect(() => {
+    if (room) {
+      hadRoomRef.current = true;
+    }
+  }, [room]);
 
   // Watch engine phase and auto-navigate
   useEffect(() => {
@@ -72,9 +80,9 @@ const InnerApp: React.FC<InnerAppProps> = ({ onLeaveRoom }) => {
     }
   }, [engineState.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // If room is null (user got kicked/banned), go back to home
+  // If room transitions from set to null (user got kicked/banned), go back to home
   useEffect(() => {
-    if (!room) {
+    if (!room && hadRoomRef.current) {
       onLeaveRoom();
     }
   }, [room, onLeaveRoom]);
