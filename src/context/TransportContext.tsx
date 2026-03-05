@@ -1,56 +1,73 @@
 import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+    type ReactNode,
 } from 'react';
 import { Transport } from '../lib/transport/Transport';
-import { BroadcastTransport } from '../lib/transport/BroadcastTransport';
+import { PeerJSTransport } from '../lib/transport/PeerJSTransport';
 
 // ---------------------------------------------------------------------------
 // Context
 // ---------------------------------------------------------------------------
 
 interface TransportContextValue {
-  transport: Transport | null;
+    transport: Transport | null;
+    isTransportReady: boolean;
 }
 
-const TransportContext = createContext<TransportContextValue>({ transport: null });
+const TransportContext = createContext<TransportContextValue>({
+    transport: null,
+    isTransportReady: false,
+});
 
 // ---------------------------------------------------------------------------
 // Provider
 // ---------------------------------------------------------------------------
 
 interface TransportProviderProps {
-  roomCode: string;
-  children: ReactNode;
+    roomCode: string;
+    isHost: boolean;
+    children: ReactNode;
 }
 
-export function TransportProvider({ roomCode, children }: TransportProviderProps) {
-  const [transport, setTransport] = useState<Transport | null>(null);
-  const transportRef = useRef<Transport | null>(null);
+export function TransportProvider({ roomCode, isHost, children }: TransportProviderProps) {
+    const [transport, setTransport] = useState<Transport | null>(null);
+    const [isTransportReady, setIsTransportReady] = useState(false);
+    const transportRef = useRef<PeerJSTransport | null>(null);
 
   useEffect(() => {
-    // Create a new BroadcastTransport for this room code
-    const instance = new BroadcastTransport(roomCode);
-    transportRef.current = instance;
-    setTransport(instance);
+        setIsTransportReady(false);
+        setTransport(null);
 
-    return () => {
-      // Clean up on unmount or when roomCode changes
-      instance.destroy();
-      transportRef.current = null;
-      setTransport(null);
-    };
-  }, [roomCode]);
+                const instance = new PeerJSTransport(roomCode, isHost);
+        transportRef.current = instance;
+
+                instance.ready
+          .then(() => {
+                    setTransport(instance);
+                    setIsTransportReady(true);
+          })
+          .catch((err) => {
+                    console.error('[TransportContext] PeerJS init failed', err);
+          });
+
+                return () => {
+                        instance.destroy();
+                        transportRef.current = null;
+                        setTransport(null);
+                        setIsTransportReady(false);
+                };
+  }, [roomCode, isHost]);
 
   return (
-    <TransportContext.Provider value={{ transport }}>
-      {children}
-    </TransportContext.Provider>
-  );
+        <TransportContext.Provider value={{ transport, isTransportReady }}>
+          {children}
+        </TransportContext.Provider>TransportContext.Provider>
+      );
 }
 
 // ---------------------------------------------------------------------------
@@ -58,11 +75,11 @@ export function TransportProvider({ roomCode, children }: TransportProviderProps
 // ---------------------------------------------------------------------------
 
 export function useTransportContext(): TransportContextValue {
-  const ctx = useContext(TransportContext);
-  if (ctx === undefined) {
-    throw new Error('useTransportContext must be used within a TransportProvider');
-  }
-  return ctx;
+    const ctx = useContext(TransportContext);
+    if (ctx === undefined) {
+          throw new Error('useTransportContext must be used within a TransportProvider');
+    }
+    return ctx;
 }
 
 export default TransportContext;
