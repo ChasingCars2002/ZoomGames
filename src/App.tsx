@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GamePhase } from './types';
 import { TransportProvider } from './context/TransportContext';
 import { RoomProvider } from './context/RoomContext';
@@ -39,6 +39,7 @@ const InnerApp: React.FC<InnerAppProps> = ({ onLeaveRoom }) => {
   const { room } = useRoomContext();
   const [screen, setScreen] = useState<Screen>('lobby');
   const [transitioning, setTransitioning] = useState(false);
+  const hadRoomRef = useRef(false);
 
   useEffect(() => {
     const targetScreen = phaseToScreen(engineState.phase);
@@ -52,8 +53,16 @@ const InnerApp: React.FC<InnerAppProps> = ({ onLeaveRoom }) => {
     }
   }, [engineState.phase]);
 
+  // Track if we ever had a room
   useEffect(() => {
-    if (!room) { onLeaveRoom(); }
+    if (room) { hadRoomRef.current = true; }
+  }, [room]);
+
+  // Only leave if room was previously set and is now null (kicked/banned/left)
+  useEffect(() => {
+    if (!room && hadRoomRef.current) {
+      onLeaveRoom();
+    }
   }, [room, onLeaveRoom]);
 
   const transitionClasses = transitioning
@@ -73,6 +82,9 @@ const InnerApp: React.FC<InnerAppProps> = ({ onLeaveRoom }) => {
 
 const RoomInitializer: React.FC<{ roomCode: string }> = ({ roomCode }) => {
   const { createRoom, joinRoom } = useRoomContext();
+  const { isTransportReady } = React.useContext(
+    React.createContext({ isTransportReady: false })
+  );
   const initializedRef = React.useRef(false);
 
   useEffect(() => {
