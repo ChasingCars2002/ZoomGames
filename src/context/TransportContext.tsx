@@ -1,11 +1,10 @@
 import React, {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useRef,
-    useState,
-    type ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
 } from 'react';
 import { Transport } from '../lib/transport/Transport';
 import { PeerJSTransport } from '../lib/transport/PeerJSTransport';
@@ -15,13 +14,13 @@ import { PeerJSTransport } from '../lib/transport/PeerJSTransport';
 // ---------------------------------------------------------------------------
 
 interface TransportContextValue {
-    transport: Transport | null;
-    isTransportReady: boolean;
+  transport: Transport | null;
+  isTransportReady: boolean;
 }
 
 const TransportContext = createContext<TransportContextValue>({
-    transport: null,
-    isTransportReady: false,
+  transport: null,
+  isTransportReady: false,
 });
 
 // ---------------------------------------------------------------------------
@@ -29,45 +28,45 @@ const TransportContext = createContext<TransportContextValue>({
 // ---------------------------------------------------------------------------
 
 interface TransportProviderProps {
-    roomCode: string;
-    isHost: boolean;
-    children: ReactNode;
+  roomCode: string;
+  isHost: boolean;
+  children: ReactNode;
 }
 
 export function TransportProvider({ roomCode, isHost, children }: TransportProviderProps) {
-    const [transport, setTransport] = useState<Transport | null>(null);
-    const [isTransportReady, setIsTransportReady] = useState(false);
-    const transportRef = useRef<PeerJSTransport | null>(null);
+  const [transport, setTransport] = useState<Transport | null>(null);
+  const [isTransportReady, setIsTransportReady] = useState(false);
+  const transportRef = useRef<PeerJSTransport | null>(null);
 
   useEffect(() => {
-        setIsTransportReady(false);
-        setTransport(null);
+    setIsTransportReady(false);
+    setTransport(null);
 
-                const instance = new PeerJSTransport(roomCode, isHost);
-        transportRef.current = instance;
+    const instance = new PeerJSTransport(roomCode, isHost);
+    transportRef.current = instance;
 
-                instance.ready
-          .then(() => {
-                    setTransport(instance);
-                    setIsTransportReady(true);
-          })
-          .catch((err) => {
-                    console.error('[TransportContext] PeerJS init failed', err);
-          });
+    instance.ready
+      .then(() => {
+        setTransport(instance);
+        setIsTransportReady(true);
+      })
+      .catch((err) => {
+        console.error('[TransportContext] PeerJS init failed', err);
+      });
 
-                return () => {
-                        instance.destroy();
-                        transportRef.current = null;
-                        setTransport(null);
-                        setIsTransportReady(false);
-                };
+    return () => {
+      instance.destroy();
+      transportRef.current = null;
+      setTransport(null);
+      setIsTransportReady(false);
+    };
   }, [roomCode, isHost]);
 
   return (
-        <TransportContext.Provider value={{ transport, isTransportReady }}>
-          {children}
-        </TransportContext.Provider>TransportContext.Provider>
-      );
+    <TransportContext.Provider value={{ transport, isTransportReady }}>
+      {children}
+    </TransportContext.Provider>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -75,11 +74,11 @@ export function TransportProvider({ roomCode, isHost, children }: TransportProvi
 // ---------------------------------------------------------------------------
 
 export function useTransportContext(): TransportContextValue {
-    const ctx = useContext(TransportContext);
-    if (ctx === undefined) {
-          throw new Error('useTransportContext must be used within a TransportProvider');
-    }
-    return ctx;
+  const ctx = useContext(TransportContext);
+  if (ctx === undefined) {
+    throw new Error('useTransportContext must be used within a TransportProvider');
+  }
+  return ctx;
 }
 
 export default TransportContext;
