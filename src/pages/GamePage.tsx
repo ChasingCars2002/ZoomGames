@@ -110,7 +110,7 @@ const GameRenderer: React.FC<{ gameType: GameType | null }> = ({ gameType }) => 
 // ---------------------------------------------------------------------------
 
 const GamePage: React.FC = () => {
-  const { engineState, dispatch, endGame } = useGameContext();
+  const { engineState, endGame } = useGameContext();
   const { room, currentPlayerId, isHost } = useRoomContext();
 
   const {
@@ -124,7 +124,6 @@ const GamePage: React.FC = () => {
     config,
   } = engineState;
 
-  const roundEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gameEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Game name for header
@@ -139,39 +138,12 @@ const GamePage: React.FC = () => {
   const showTransition =
     phase === GamePhase.GAME_STARTING || phase === GamePhase.ROUND_STARTING;
 
-  // Handle round transition complete (host dispatches START_ROUND)
+  // Round lifecycle is owned by each game component (they dispatch START_ROUND
+  // with real round data and advance/end on their own timers). GamePage only
+  // handles the final GAME_ENDING -> RESULTS transition below.
   const handleTransitionComplete = useCallback(() => {
-    if (isHost) {
-      dispatch({
-        type: 'START_ROUND',
-        roundData: { startedAt: Date.now() },
-      });
-    }
-  }, [isHost, dispatch]);
-
-  // Auto-advance from ROUND_ENDING: host dispatches START_ROUND for next round
-  useEffect(() => {
-    if (phase !== GamePhase.ROUND_ENDING || !isHost) return;
-
-    roundEndTimerRef.current = setTimeout(() => {
-      if (currentRound < totalRounds) {
-        // More rounds to go
-        dispatch({
-          type: 'START_ROUND',
-          roundData: { startedAt: Date.now() },
-        });
-      } else {
-        // Last round ended, transition to game ending
-        dispatch({ type: 'END_GAME' });
-      }
-    }, 3000);
-
-    return () => {
-      if (roundEndTimerRef.current) {
-        clearTimeout(roundEndTimerRef.current);
-      }
-    };
-  }, [phase, isHost, currentRound, totalRounds, dispatch]);
+    // no-op: the active game's host effect starts the round
+  }, []);
 
   // Auto-transition from GAME_ENDING: after 2s, host dispatches END_GAME results
   useEffect(() => {
@@ -257,23 +229,15 @@ const GamePage: React.FC = () => {
         </div>
       )}
 
-      {/* Round ending brief results overlay */}
+      {/* Round ending: slim, non-blocking banner so the game's reveal stays visible */}
       {phase === GamePhase.ROUND_ENDING && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-navy-900/60 backdrop-blur-sm">
-          <Card glow="yellow" className="p-8 text-center max-w-md">
-            <h2 className="font-display text-2xl text-neon-yellow mb-2">Round Complete!</h2>
-            <p className="font-body text-white/60 mb-4">
-              {currentRound < totalRounds
-                ? 'Next round starting soon...'
-                : 'Final scores incoming...'}
-            </p>
-            <div className="flex justify-center">
-              <div
-                className="w-8 h-8 border-3 border-neon-yellow/30 border-t-neon-yellow rounded-full"
-                style={{ animation: 'spin 1s linear infinite' }}
-              />
-            </div>
-          </Card>
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
+          <div className="px-5 py-2 rounded-full bg-navy-800/90 border border-neon-yellow/40 shadow-lg flex items-center gap-2 animate-slide-up">
+            <span className="font-display text-sm text-neon-yellow">Round Complete!</span>
+            <span className="font-body text-xs text-white/50">
+              {currentRound < totalRounds ? 'Next round starting soon...' : 'Final scores incoming...'}
+            </span>
+          </div>
         </div>
       )}
 
