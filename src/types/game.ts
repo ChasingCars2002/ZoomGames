@@ -5,6 +5,7 @@ export enum GameType {
   TWO_TRUTHS = 'two_truths',
   WORD_SCRAMBLE = 'word_scramble',
   CHARADES = 'charades',
+  HANGMAN = 'hangman',
 }
 
 export enum GamePhase {

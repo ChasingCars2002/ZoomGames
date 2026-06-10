@@ -35,6 +35,18 @@ export type EngineAction =
   | { type: 'PLAYER_ACTION'; playerId: string; action: PlayerAction }
   | { type: 'TICK' }
   | { type: 'END_ROUND'; scores: Record<string, number>; roundData?: unknown }
+  | {
+      type: 'SYNC_STATE';
+      payload: {
+        phase: GamePhase;
+        gameType: GameType | null;
+        scores: Record<string, number>;
+        currentRound: number;
+        totalRounds: number;
+        roundData: unknown;
+        timeRemaining: number;
+      };
+    }
   | { type: 'END_GAME' }
   | { type: 'RESET' }
   | { type: 'KICK_PLAYER'; playerId: string }
@@ -302,6 +314,25 @@ export function engineReducer(state: EngineState, action: EngineAction): EngineS
         scores: updatedScores,
         roundData: action.roundData !== undefined ? action.roundData : state.roundData,
         timeRemaining: 0,
+      };
+    }
+
+    // ----- SYNC_STATE -----
+    // Applies an authoritative snapshot from the host (last-write-wins).
+    // Only ever dispatched on non-host clients when GAME_STATE_SYNC arrives,
+    // keeping timers, scores, and mid-round data identical across players.
+    case 'SYNC_STATE': {
+      const { payload } = action;
+      return {
+        ...state,
+        phase: payload.phase,
+        gameType: payload.gameType ?? state.gameType,
+        selectedGame: payload.gameType ?? state.selectedGame,
+        scores: payload.scores,
+        currentRound: payload.currentRound,
+        totalRounds: payload.totalRounds,
+        roundData: payload.roundData,
+        timeRemaining: payload.timeRemaining,
       };
     }
 

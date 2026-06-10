@@ -35,7 +35,7 @@ const DISCONNECT_THRESHOLD_MS = 15000;
 interface RoomProviderProps { children: ReactNode; }
 
 export function RoomProvider({ children }: RoomProviderProps) {
-  const { transport, isTransportReady } = useTransportContext();
+  const { transport, isTransportReady, roomCode: transportRoomCode } = useTransportContext();
   const [room, setRoom] = useState<Room | null>(null);
   const [currentPlayerId, setCurrentPlayerId] = useState<string | null>(null);
   const heartbeatsRef = useRef<Record<string, number>>({});
@@ -59,13 +59,15 @@ export function RoomProvider({ children }: RoomProviderProps) {
 
   const createRoom = useCallback((nickname: string) => {
     if (!transport) return;
-    const code = generateRoomCode();
+    // The transport identity (PeerJS peer id / BroadcastChannel name) is keyed
+    // by the app-level room code, so the code players type must be that one.
+    const code = transportRoomCode || generateRoomCode();
     const hostPlayer = buildPlayer(transport.clientId, nickname, Role.HOST, []);
     const newRoom: Room = { code, hostId: transport.clientId, players: [hostPlayer], createdAt: Date.now(), maxPlayers: 10, bannedIds: [] };
     setRoom(newRoom);
     setCurrentPlayerId(transport.clientId);
     heartbeatsRef.current[transport.clientId] = Date.now();
-  }, [transport, buildPlayer]);
+  }, [transport, transportRoomCode, buildPlayer]);
 
   const joinRoom = useCallback((code: string, nickname: string) => {
     if (!transport) return;

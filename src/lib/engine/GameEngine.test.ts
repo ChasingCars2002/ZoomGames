@@ -419,3 +419,66 @@ describe('engineReducer – TRANSFER_HOST', () => {
     expect(next.hostId).toBe('host-1');
   });
 });
+
+describe('engineReducer – SYNC_STATE', () => {
+  it('applies the host snapshot wholesale (last-write-wins)', () => {
+    const state = activeGameState();
+    const next = engineReducer(state, {
+      type: 'SYNC_STATE',
+      payload: {
+        phase: GamePhase.ROUND_ACTIVE,
+        gameType: GameType.TRIVIA,
+        scores: { 'host-1': 100, p2: 250 },
+        currentRound: 2,
+        totalRounds: 5,
+        roundData: { question: 'Updated?', actions: [{ playerId: 'p2' }] },
+        timeRemaining: 42,
+      },
+    });
+
+    expect(next.phase).toBe(GamePhase.ROUND_ACTIVE);
+    expect(next.scores).toEqual({ 'host-1': 100, p2: 250 });
+    expect(next.currentRound).toBe(2);
+    expect(next.totalRounds).toBe(5);
+    expect(next.timeRemaining).toBe(42);
+    expect(next.roundData).toEqual({ question: 'Updated?', actions: [{ playerId: 'p2' }] });
+  });
+
+  it('keeps the existing gameType when payload gameType is null', () => {
+    const state = activeGameState();
+    const next = engineReducer(state, {
+      type: 'SYNC_STATE',
+      payload: {
+        phase: state.phase,
+        gameType: null,
+        scores: state.scores,
+        currentRound: state.currentRound,
+        totalRounds: state.totalRounds,
+        roundData: state.roundData,
+        timeRemaining: 10,
+      },
+    });
+
+    expect(next.gameType).toBe(GameType.TRIVIA);
+    expect(next.timeRemaining).toBe(10);
+  });
+
+  it('syncs phase transitions the client missed (e.g. round ending)', () => {
+    const state = activeGameState();
+    const next = engineReducer(state, {
+      type: 'SYNC_STATE',
+      payload: {
+        phase: GamePhase.ROUND_ENDING,
+        gameType: GameType.TRIVIA,
+        scores: state.scores,
+        currentRound: state.currentRound,
+        totalRounds: state.totalRounds,
+        roundData: state.roundData,
+        timeRemaining: 0,
+      },
+    });
+
+    expect(next.phase).toBe(GamePhase.ROUND_ENDING);
+    expect(next.timeRemaining).toBe(0);
+  });
+});

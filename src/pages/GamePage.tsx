@@ -31,6 +31,9 @@ const TwoTruthsGame = React.lazy(
 const CharadesGame = React.lazy(
   () => import('../components/games/charades/CharadesGame')
 );
+const HangmanGame = React.lazy(
+  () => import('../components/games/hangman/HangmanGame')
+);
 
 // ---------------------------------------------------------------------------
 // Loading fallback
@@ -71,6 +74,8 @@ const GameRenderer: React.FC<{ gameType: GameType | null }> = ({ gameType }) => 
       return <TwoTruthsGame />;
     case GameType.CHARADES:
       return <CharadesGame />;
+    case GameType.HANGMAN:
+      return <HangmanGame />;
     default:
       return (
         <div className="flex-1 flex items-center justify-center">

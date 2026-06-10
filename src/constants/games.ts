@@ -47,6 +47,15 @@ export const GAME_LIST: GameMeta[] = [
     defaultConfig: { rounds: 10, timeLimit: 30, difficulty: 'medium' },
   },
   {
+    type: GameType.HANGMAN,
+    name: 'Team Hangman',
+    emoji: '💀',
+    description: 'Save the team! Shout letters on the call or tap them on your device.',
+    minPlayers: 1,
+    maxPlayers: 20,
+    defaultConfig: { rounds: 3, timeLimit: 90, difficulty: 'medium' },
+  },
+  {
     type: GameType.CHARADES,
     name: 'Charades',
     emoji: '\uD83C\uDFAD',

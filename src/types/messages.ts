@@ -9,6 +9,7 @@ export interface StrokeData {
 
 export type PlayerAction =
   | { type: 'guess'; guess: string }
+  | { type: 'guess_letter'; letter: string }
   | { type: 'answer'; answerIndex: number; timestamp: number }
   | { type: 'submit_word'; word: string }
   | { type: 'submit_statements'; statements: string[]; lieIndex: number }
