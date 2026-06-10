@@ -34,6 +34,18 @@ const CharadesGame = React.lazy(
 const HangmanGame = React.lazy(
   () => import('../components/games/hangman/HangmanGame')
 );
+const ScattergoriesGame = React.lazy(
+  () => import('../components/games/scattergories/ScattergoriesGame')
+);
+const EmojiDecodeGame = React.lazy(
+  () => import('../components/games/emoji-decode/EmojiDecodeGame')
+);
+const BluffTriviaGame = React.lazy(
+  () => import('../components/games/bluff-trivia/BluffTriviaGame')
+);
+const MindMeldGame = React.lazy(
+  () => import('../components/games/mind-meld/MindMeldGame')
+);
 
 // ---------------------------------------------------------------------------
 // Loading fallback
@@ -76,6 +88,14 @@ const GameRenderer: React.FC<{ gameType: GameType | null }> = ({ gameType }) => 
       return <CharadesGame />;
     case GameType.HANGMAN:
       return <HangmanGame />;
+    case GameType.SCATTERGORIES:
+      return <ScattergoriesGame />;
+    case GameType.EMOJI_DECODE:
+      return <EmojiDecodeGame />;
+    case GameType.BLUFF_TRIVIA:
+      return <BluffTriviaGame />;
+    case GameType.MIND_MELD:
+      return <MindMeldGame />;
     default:
       return (
         <div className="flex-1 flex items-center justify-center">

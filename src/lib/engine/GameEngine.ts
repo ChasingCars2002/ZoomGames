@@ -32,6 +32,7 @@ export type EngineAction =
   | { type: 'UPDATE_CONFIG'; config: Partial<GameConfig> }
   | { type: 'START_GAME' }
   | { type: 'START_ROUND'; roundData: unknown }
+  | { type: 'UPDATE_ROUND_DATA'; roundData: unknown }
   | { type: 'PLAYER_ACTION'; playerId: string; action: PlayerAction }
   | { type: 'TICK' }
   | { type: 'END_ROUND'; scores: Record<string, number>; roundData?: unknown }
@@ -240,6 +241,32 @@ export function engineReducer(state: EngineState, action: EngineAction): EngineS
         currentRound: nextRound,
         roundData: action.roundData,
         timeRemaining: state.config.timeLimit,
+      };
+    }
+
+    // ----- UPDATE_ROUND_DATA -----
+    // Replace roundData in place without changing phase or round. Used by the
+    // host to advance multi-phase games (e.g. Bluff Trivia writing→choosing,
+    // Mind Meld cluing→guessing) so the authoritative state flows through the
+    // normal GAME_STATE_SYNC instead of a fragile out-of-band broadcast. The
+    // appended action log is preserved across the update.
+    case 'UPDATE_ROUND_DATA': {
+      if (state.phase !== GamePhase.ROUND_ACTIVE) return state;
+
+      const prev =
+        state.roundData && typeof state.roundData === 'object'
+          ? (state.roundData as Record<string, unknown>)
+          : {};
+      const next =
+        action.roundData && typeof action.roundData === 'object'
+          ? (action.roundData as Record<string, unknown>)
+          : {};
+      // Preserve the existing actions array unless the update explicitly sets it.
+      const actions = 'actions' in next ? next.actions : prev.actions;
+
+      return {
+        ...state,
+        roundData: { ...next, actions },
       };
     }
 

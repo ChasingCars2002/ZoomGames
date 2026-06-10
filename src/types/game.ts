@@ -6,6 +6,10 @@ export enum GameType {
   WORD_SCRAMBLE = 'word_scramble',
   CHARADES = 'charades',
   HANGMAN = 'hangman',
+  SCATTERGORIES = 'scattergories',
+  EMOJI_DECODE = 'emoji_decode',
+  BLUFF_TRIVIA = 'bluff_trivia',
+  MIND_MELD = 'mind_meld',
 }
 
 export enum GamePhase {

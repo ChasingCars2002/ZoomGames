@@ -64,6 +64,42 @@ export const GAME_LIST: GameMeta[] = [
     maxPlayers: 12,
     defaultConfig: { rounds: 3, timeLimit: 90, difficulty: 'medium' },
   },
+  {
+    type: GameType.SCATTERGORIES,
+    name: 'Scattergories',
+    emoji: '\uD83D\uDD20',
+    description: 'One letter, many categories! Race the clock \u2014 unique answers score.',
+    minPlayers: 1,
+    maxPlayers: 16,
+    defaultConfig: { rounds: 3, timeLimit: 90, difficulty: 'medium' },
+  },
+  {
+    type: GameType.EMOJI_DECODE,
+    name: 'Emoji Decode',
+    emoji: '\uD83D\uDD23',
+    description: 'Crack the emoji rebus! Shout it out or type your guess.',
+    minPlayers: 1,
+    maxPlayers: 20,
+    defaultConfig: { rounds: 8, timeLimit: 45, difficulty: 'medium' },
+  },
+  {
+    type: GameType.BLUFF_TRIVIA,
+    name: 'Bluff Trivia',
+    emoji: '\uD83E\uDD25',
+    description: 'Write fake answers to fool your friends, then spot the real one!',
+    minPlayers: 3,
+    maxPlayers: 12,
+    defaultConfig: { rounds: 5, timeLimit: 45, difficulty: 'medium' },
+  },
+  {
+    type: GameType.MIND_MELD,
+    name: 'Mind Meld',
+    emoji: '\uD83D\uDCE1',
+    description: 'Read the clue and slide to the hidden spot on the spectrum together.',
+    minPlayers: 3,
+    maxPlayers: 12,
+    defaultConfig: { rounds: 4, timeLimit: 45, difficulty: 'medium' },
+  },
 ];
 
 export const GAME_MAP = Object.fromEntries(

@@ -482,3 +482,35 @@ describe('engineReducer – SYNC_STATE', () => {
     expect(next.timeRemaining).toBe(0);
   });
 });
+
+describe('engineReducer – UPDATE_ROUND_DATA', () => {
+  it('replaces roundData in place during ROUND_ACTIVE, preserving the action log', () => {
+    let state = activeGameState();
+    // append an action so we can confirm it survives the update
+    state = engineReducer(state, {
+      type: 'PLAYER_ACTION',
+      playerId: 'p2',
+      action: { type: 'guess', guess: 'blue' },
+    });
+    const actionsBefore = (state.roundData as { actions?: unknown[] }).actions;
+    expect(actionsBefore).toHaveLength(1);
+
+    const next = engineReducer(state, {
+      type: 'UPDATE_ROUND_DATA',
+      roundData: { phase: 'choosing', options: [{ id: 'x', text: 'X' }] },
+    });
+
+    const rd = next.roundData as { phase: string; options: unknown[]; actions?: unknown[] };
+    expect(rd.phase).toBe('choosing');
+    expect(rd.options).toHaveLength(1);
+    expect(rd.actions).toHaveLength(1); // preserved
+    expect(next.phase).toBe(GamePhase.ROUND_ACTIVE); // phase/round unchanged
+    expect(next.currentRound).toBe(state.currentRound);
+  });
+
+  it('is ignored outside ROUND_ACTIVE', () => {
+    const state = lobbyWithPlayers(); // LOBBY phase
+    const next = engineReducer(state, { type: 'UPDATE_ROUND_DATA', roundData: { phase: 'x' } });
+    expect(next).toBe(state);
+  });
+});
