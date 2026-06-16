@@ -32,9 +32,22 @@ export type EngineAction =
   | { type: 'UPDATE_CONFIG'; config: Partial<GameConfig> }
   | { type: 'START_GAME' }
   | { type: 'START_ROUND'; roundData: unknown }
+  | { type: 'UPDATE_ROUND_DATA'; roundData: unknown }
   | { type: 'PLAYER_ACTION'; playerId: string; action: PlayerAction }
   | { type: 'TICK' }
   | { type: 'END_ROUND'; scores: Record<string, number>; roundData?: unknown }
+  | {
+      type: 'SYNC_STATE';
+      payload: {
+        phase: GamePhase;
+        gameType: GameType | null;
+        scores: Record<string, number>;
+        currentRound: number;
+        totalRounds: number;
+        roundData: unknown;
+        timeRemaining: number;
+      };
+    }
   | { type: 'END_GAME' }
   | { type: 'RESET' }
   | { type: 'KICK_PLAYER'; playerId: string }
@@ -231,6 +244,32 @@ export function engineReducer(state: EngineState, action: EngineAction): EngineS
       };
     }
 
+    // ----- UPDATE_ROUND_DATA -----
+    // Replace roundData in place without changing phase or round. Used by the
+    // host to advance multi-phase games (e.g. Bluff Trivia writing→choosing,
+    // Mind Meld cluing→guessing) so the authoritative state flows through the
+    // normal GAME_STATE_SYNC instead of a fragile out-of-band broadcast. The
+    // appended action log is preserved across the update.
+    case 'UPDATE_ROUND_DATA': {
+      if (state.phase !== GamePhase.ROUND_ACTIVE) return state;
+
+      const prev =
+        state.roundData && typeof state.roundData === 'object'
+          ? (state.roundData as Record<string, unknown>)
+          : {};
+      const next =
+        action.roundData && typeof action.roundData === 'object'
+          ? (action.roundData as Record<string, unknown>)
+          : {};
+      // Preserve the existing actions array unless the update explicitly sets it.
+      const actions = 'actions' in next ? next.actions : prev.actions;
+
+      return {
+        ...state,
+        roundData: { ...next, actions },
+      };
+    }
+
     // ----- PLAYER_ACTION -----
     case 'PLAYER_ACTION': {
       if (state.phase !== GamePhase.ROUND_ACTIVE) return state;
@@ -302,6 +341,25 @@ export function engineReducer(state: EngineState, action: EngineAction): EngineS
         scores: updatedScores,
         roundData: action.roundData !== undefined ? action.roundData : state.roundData,
         timeRemaining: 0,
+      };
+    }
+
+    // ----- SYNC_STATE -----
+    // Applies an authoritative snapshot from the host (last-write-wins).
+    // Only ever dispatched on non-host clients when GAME_STATE_SYNC arrives,
+    // keeping timers, scores, and mid-round data identical across players.
+    case 'SYNC_STATE': {
+      const { payload } = action;
+      return {
+        ...state,
+        phase: payload.phase,
+        gameType: payload.gameType ?? state.gameType,
+        selectedGame: payload.gameType ?? state.selectedGame,
+        scores: payload.scores,
+        currentRound: payload.currentRound,
+        totalRounds: payload.totalRounds,
+        roundData: payload.roundData,
+        timeRemaining: payload.timeRemaining,
       };
     }
 

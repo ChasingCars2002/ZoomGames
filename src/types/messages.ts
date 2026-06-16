@@ -9,6 +9,7 @@ export interface StrokeData {
 
 export type PlayerAction =
   | { type: 'guess'; guess: string }
+  | { type: 'guess_letter'; letter: string }
   | { type: 'answer'; answerIndex: number; timestamp: number }
   | { type: 'submit_word'; word: string }
   | { type: 'submit_statements'; statements: string[]; lieIndex: number }
@@ -16,7 +17,12 @@ export type PlayerAction =
   | { type: 'pass' }
   | { type: 'confirm_guess'; playerId: string }
   | { type: 'use_hint' }
-  | { type: 'challenge'; targetId: string };
+  | { type: 'challenge'; targetId: string }
+  | { type: 'submit_answers'; answers: string[] }
+  | { type: 'submit_fake'; text: string }
+  | { type: 'pick_answer'; index: number }
+  | { type: 'submit_clue'; text: string }
+  | { type: 'submit_position'; value: number };
 
 export type GameMessage =
   | { type: 'PLAYER_JOIN'; payload: { player: Player } }

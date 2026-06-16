@@ -419,3 +419,98 @@ describe('engineReducer – TRANSFER_HOST', () => {
     expect(next.hostId).toBe('host-1');
   });
 });
+
+describe('engineReducer – SYNC_STATE', () => {
+  it('applies the host snapshot wholesale (last-write-wins)', () => {
+    const state = activeGameState();
+    const next = engineReducer(state, {
+      type: 'SYNC_STATE',
+      payload: {
+        phase: GamePhase.ROUND_ACTIVE,
+        gameType: GameType.TRIVIA,
+        scores: { 'host-1': 100, p2: 250 },
+        currentRound: 2,
+        totalRounds: 5,
+        roundData: { question: 'Updated?', actions: [{ playerId: 'p2' }] },
+        timeRemaining: 42,
+      },
+    });
+
+    expect(next.phase).toBe(GamePhase.ROUND_ACTIVE);
+    expect(next.scores).toEqual({ 'host-1': 100, p2: 250 });
+    expect(next.currentRound).toBe(2);
+    expect(next.totalRounds).toBe(5);
+    expect(next.timeRemaining).toBe(42);
+    expect(next.roundData).toEqual({ question: 'Updated?', actions: [{ playerId: 'p2' }] });
+  });
+
+  it('keeps the existing gameType when payload gameType is null', () => {
+    const state = activeGameState();
+    const next = engineReducer(state, {
+      type: 'SYNC_STATE',
+      payload: {
+        phase: state.phase,
+        gameType: null,
+        scores: state.scores,
+        currentRound: state.currentRound,
+        totalRounds: state.totalRounds,
+        roundData: state.roundData,
+        timeRemaining: 10,
+      },
+    });
+
+    expect(next.gameType).toBe(GameType.TRIVIA);
+    expect(next.timeRemaining).toBe(10);
+  });
+
+  it('syncs phase transitions the client missed (e.g. round ending)', () => {
+    const state = activeGameState();
+    const next = engineReducer(state, {
+      type: 'SYNC_STATE',
+      payload: {
+        phase: GamePhase.ROUND_ENDING,
+        gameType: GameType.TRIVIA,
+        scores: state.scores,
+        currentRound: state.currentRound,
+        totalRounds: state.totalRounds,
+        roundData: state.roundData,
+        timeRemaining: 0,
+      },
+    });
+
+    expect(next.phase).toBe(GamePhase.ROUND_ENDING);
+    expect(next.timeRemaining).toBe(0);
+  });
+});
+
+describe('engineReducer – UPDATE_ROUND_DATA', () => {
+  it('replaces roundData in place during ROUND_ACTIVE, preserving the action log', () => {
+    let state = activeGameState();
+    // append an action so we can confirm it survives the update
+    state = engineReducer(state, {
+      type: 'PLAYER_ACTION',
+      playerId: 'p2',
+      action: { type: 'guess', guess: 'blue' },
+    });
+    const actionsBefore = (state.roundData as { actions?: unknown[] }).actions;
+    expect(actionsBefore).toHaveLength(1);
+
+    const next = engineReducer(state, {
+      type: 'UPDATE_ROUND_DATA',
+      roundData: { phase: 'choosing', options: [{ id: 'x', text: 'X' }] },
+    });
+
+    const rd = next.roundData as { phase: string; options: unknown[]; actions?: unknown[] };
+    expect(rd.phase).toBe('choosing');
+    expect(rd.options).toHaveLength(1);
+    expect(rd.actions).toHaveLength(1); // preserved
+    expect(next.phase).toBe(GamePhase.ROUND_ACTIVE); // phase/round unchanged
+    expect(next.currentRound).toBe(state.currentRound);
+  });
+
+  it('is ignored outside ROUND_ACTIVE', () => {
+    const state = lobbyWithPlayers(); // LOBBY phase
+    const next = engineReducer(state, { type: 'UPDATE_ROUND_DATA', roundData: { phase: 'x' } });
+    expect(next).toBe(state);
+  });
+});

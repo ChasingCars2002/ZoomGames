@@ -239,6 +239,21 @@ export function GameProvider({ children }: GameProviderProps) {
           dispatch({ type: 'LEAVE', playerId: ep.id });
         }
       }
+
+      // Apply the host's authoritative snapshot (last-write-wins) so phase,
+      // timer, scores, and mid-round data stay in lockstep with the host.
+      dispatch({
+        type: 'SYNC_STATE',
+        payload: {
+          phase: payload.phase,
+          gameType: payload.gameType,
+          scores: payload.scores,
+          currentRound: payload.currentRound,
+          totalRounds: payload.totalRounds,
+          roundData: payload.roundData,
+          timeRemaining: payload.timeRemaining,
+        },
+      });
     },
     [],
   );

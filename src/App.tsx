@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GamePhase } from './types';
-import { TransportProvider } from './context/TransportContext';
+import { TransportProvider, useTransportContext } from './context/TransportContext';
 import { RoomProvider } from './context/RoomContext';
 import { GameProvider, useGameContext } from './context/GameContext';
 import { useRoomContext } from './context/RoomContext';
@@ -82,13 +82,11 @@ const InnerApp: React.FC<InnerAppProps> = ({ onLeaveRoom }) => {
 
 const RoomInitializer: React.FC<{ roomCode: string }> = ({ roomCode }) => {
   const { createRoom, joinRoom } = useRoomContext();
-  const { isTransportReady } = React.useContext(
-    React.createContext({ isTransportReady: false })
-  );
+  const { isTransportReady } = useTransportContext();
   const initializedRef = React.useRef(false);
 
   useEffect(() => {
-    if (initializedRef.current) return;
+    if (!isTransportReady || initializedRef.current) return;
     initializedRef.current = true;
     const nickname = sessionStorage.getItem('zg_nickname') ?? 'Player';
     const action = sessionStorage.getItem('zg_action');
@@ -98,7 +96,7 @@ const RoomInitializer: React.FC<{ roomCode: string }> = ({ roomCode }) => {
       const code = sessionStorage.getItem('zg_room_code') ?? roomCode;
       joinRoom(code, nickname);
     }
-  }, []);
+  }, [isTransportReady, createRoom, joinRoom, roomCode]);
 
   return null;
 };
