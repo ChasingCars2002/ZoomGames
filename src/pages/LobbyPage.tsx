@@ -222,16 +222,18 @@ const LobbyPage: React.FC = () => {
       <div className="px-4 pb-4">
         <Card glow="none" className="p-4">
           <div className="flex flex-col items-center gap-3">
-            {/* Ready button (for non-hosts) */}
-            <div className="flex items-center gap-3">
-              <Button
-                variant={currentPlayer?.ready ? 'danger' : 'secondary'}
-                size="md"
-                onClick={toggleReady}
-              >
-                {currentPlayer?.ready ? 'Not Ready' : 'Ready Up'}
-              </Button>
-            </div>
+            {/* The host is always ready and starts the game; only players ready up. */}
+            {!isHost && (
+              <div className="flex items-center gap-3">
+                <Button
+                  variant={currentPlayer?.ready ? 'danger' : 'secondary'}
+                  size="md"
+                  onClick={toggleReady}
+                >
+                  {currentPlayer?.ready ? 'Not Ready' : "I'm Ready!"}
+                </Button>
+              </div>
+            )}
 
             {/* Host controls */}
             {isHost ? (

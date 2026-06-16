@@ -111,6 +111,18 @@ describe('PlayerList', () => {
     expect(notReadyBadges.length).toBe(1);
   });
 
+  it('shows the host as READY even when their ready flag is false (host is implicitly ready)', () => {
+    const players = makePlayers();
+    // Host has not explicitly readied up.
+    players[0] = { ...players[0], ready: false };
+    render(
+      <PlayerList players={players} currentPlayerId="host-1" hostId="host-1" />,
+    );
+    // host-1 (implicit) and bot-1 (ready:true) -> 2 READY; only Alice NOT READY.
+    expect(screen.getAllByText('READY').length).toBe(2);
+    expect(screen.getAllByText('NOT READY').length).toBe(1);
+  });
+
   it('shows kick button for non-host players when current user is host', () => {
     const onKick = vi.fn();
     render(
