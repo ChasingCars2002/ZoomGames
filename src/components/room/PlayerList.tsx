@@ -84,8 +84,8 @@ const PlayerList: React.FC<PlayerListProps> = ({
               {/* Role badge */}
               <Badge variant={roleToBadgeVariant(isHost ? Role.HOST : player.role, player.isBot)} />
 
-              {/* Ready status */}
-              <Badge variant={player.ready ? 'ready' : 'not-ready'} />
+              {/* Ready status — the host is implicitly ready (they start the game). */}
+              <Badge variant={isHost || player.ready ? 'ready' : 'not-ready'} />
 
               {/* Host actions */}
               {showActions && (
